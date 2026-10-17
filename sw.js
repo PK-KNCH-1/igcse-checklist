@@ -6,7 +6,7 @@ const VERSION = 'countdown-v9';
 // and only ever clear this copy's old ones (and the unscoped names used before v8).
 const SCOPE = new URL(self.registration.scope).pathname;
 const CACHE = `${SCOPE}|${VERSION}`;
-const SHELL = ['./', 'index.html', 'style.css?v=9', 'data.js?v=9', 'sync.js?v=9', 'quiz.js?v=9', 'qz-chem.js?v=9', 'qz-phys.js?v=9', 'qz-bio.js?v=9', 'qz-maths.js?v=9', 'qz-econ.js?v=9', 'app.js?v=9', 'config.js?v=9', 'manifest.webmanifest', 'icons/icon-192.png'];
+const SHELL = ['./', 'index.html', 'style.css?v=9', 'data.js?v=9', 'sync.js?v=9', 'quiz.js?v=9', 'qz-chem.js?v=9', 'qz-phys.js?v=9', 'qz-bio.js?v=9', 'qz-maths.js?v=9', 'qz-econ.js?v=9', 'app.js?v=9', 'accounts.js?v=9', 'accounts.css?v=9', 'config.js?v=9', 'manifest.webmanifest', 'icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
