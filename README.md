@@ -4,6 +4,5 @@ An IGCSE February/March 2027 revision tracker (Zone 4, India): past-paper librar
 goals, targets and a daily recall quiz for Chemistry, Physics, Biology, Maths (0607) and Economics.
 Plain HTML, CSS and JavaScript; runs offline and syncs between your devices.
 
-Each friend creates an account (name, password and the invite code) and logs in on any device;
-every account keeps its own data. A private link (ending in `#k=…`) also opens a tracker directly,
-so keep yours to yourself.
+Each friend creates an account with a name and password and logs in on any device;
+every account keeps its own data.

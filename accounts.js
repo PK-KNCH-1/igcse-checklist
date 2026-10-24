@@ -1,24 +1,25 @@
 /* Countdown — accounts for a shared copy (several friends on one site).
    Loaded only on copies whose index.html names a site: <meta name="cd-site" content="…">.
-   An account is a name and password that unlock one private link (vault); each friend's data stays
-   separate. New accounts need the site's invite code. Private links keep working as before. */
+   Each friend creates an account with a name and password and logs in on any device; every
+   account has its own private vault, so data stays separate. No private links: the vault's key
+   stays inside the app and never appears in the address bar. Friends never type an invite code:
+   the site's code is sent automatically (since 24 Oct 2026), so a name and password are enough. */
 
 (() => {
   const SITE = (document.querySelector('meta[name="cd-site"]') || {}).content || '';
   if (!SITE || PREVIEW || !Sync.config()) return;
 
+  const INVITE = 'X6CF4M';
   const A = (window.Accounts = { name: LS.get('cd.acct', null), mode: 'login', pwOpen: false });
 
   const ERR = {
-    bad_invite: 'That invite code isn’t right. Ask the friend who sent you the link.',
     bad_name: 'Names are 3–20 letters or numbers (you can use . _ and -), with no spaces.',
     bad_password: 'Use a password of at least 6 characters.',
     name_taken: 'That name is already taken. Try another.',
     bad_login: 'That name or password is wrong.',
     full: 'This tracker has no room for more accounts. Ask the friend who sent you the link.',
-    has_account: 'This tracker already has a login.',
-    unknown_vault: 'This tracker can’t be given a login.',
-    no_account: 'This tracker doesn’t have a login yet.',
+    closed: 'New accounts can’t be made on this tracker right now.',
+    no_account: 'This device isn’t logged in to an account.',
   };
   const errText = (r) => (r.error === 'locked'
     ? `Too many wrong passwords. Try again in ${r.minutes} minute${r.minutes === 1 ? '' : 's'}.`
@@ -38,8 +39,12 @@
     A.name = n || null;
     if (n) LS.set('cd.acct', n); else LS.del('cd.acct');
   }
+  // The app writes the vault key into the address bar (#k=…); on this copy it stays hidden.
+  function cleanHash() {
+    if (/(^#|&)k=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
+  }
 
-  /* ── the log-in screen, shown whenever this device has no tracker open ── */
+  /* ── the log-in screen, shown whenever this device isn't logged in ── */
   function gateHTML() {
     const login = A.mode === 'login';
     return `<div class="acct-card">
@@ -51,19 +56,12 @@
         <button type="button" role="radio" aria-checked="${!login}" data-act="acct-mode" data-m="signup">Create account</button>
       </div>
       <form class="acct-form" data-form="${login ? 'acct-login' : 'acct-signup'}" novalidate>
-        <label class="fld"><span>Name</span><input name="name" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="20" required></label>
+        <label class="fld"><span>Name${login ? '' : ' <small class="opt">3–20 letters or numbers, no spaces</small>'}</span><input name="name" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="20" required></label>
         <label class="fld"><span>Password${login ? '' : ' <small class="opt">at least 6 characters</small>'}</span><input name="password" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" maxlength="72" required></label>
-        ${login ? '' : '<label class="fld"><span>Invite code <small class="opt">from the friend who sent you the link</small></span><input name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" required></label>'}
         <p class="mf-err" hidden></p>
         <button class="btn primary" type="submit">${login ? 'Log in' : 'Create account'}</button>
       </form>
-      <details class="acct-link"><summary>I have a private link instead</summary>
-        <form class="acct-form" data-form="acct-link" novalidate>
-          <label class="fld"><span>Private link</span><input name="link" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…#k=…"></label>
-          <p class="mf-err" hidden></p>
-          <button class="btn" type="submit">Open my tracker</button>
-        </form>
-      </details>
+      <p class="fine acct-foot">${login ? 'New here? Tap <b>Create account</b> above.' : 'Remember your name and password. You’ll use them to log in on your other devices.'}</p>
     </div>`;
   }
   function showGate() {
@@ -100,38 +98,42 @@
 
   async function openTracker(secret, name) {
     const ok = await connectWith(secret, { quiet: true });
+    cleanHash();
     if (!ok && !Sync.key) return false;
     setName(name);
     hideGate();
     render();
-    toast(name ? `Welcome, ${name}.` : 'Your tracker is open.');
+    toast(`Welcome, ${name}.`);
     return true;
   }
 
-  /* ── account box at the top of the Sync tab ── */
+  /* ── Sync tab: account box on top; the private-link controls are left out on this copy ── */
   function accountHTML() {
-    let body;
-    if (A.name) {
-      body = `<p>Logged in as <b>${esc(A.name)}</b>. Log in with your name and password on any phone, tablet or computer.</p>
-        <div class="btn-row"><button class="btn" data-act="acct-pw" aria-expanded="${A.pwOpen}">Change password</button><button class="btn" data-act="acct-logout">Log out of this device</button></div>
-        ${A.pwOpen ? `<form class="acct-form acct-inline" data-form="acct-pw" novalidate>
-          <label class="fld grow"><span>New password</span><input name="password" type="password" autocomplete="new-password" maxlength="72" required></label>
-          <button class="btn primary" type="submit">Save</button><p class="mf-err" hidden></p></form>` : ''}`;
-    } else {
-      body = `<p>Add a name and password, so you can open this tracker on other devices by logging in instead of using the private link.</p>
-        <form class="acct-form acct-inline" data-form="acct-attach" novalidate>
-          <label class="fld"><span>Name</span><input name="name" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20" required></label>
-          <label class="fld"><span>Password <small class="opt">at least 6 characters</small></span><input name="password" type="password" autocomplete="new-password" maxlength="72" required></label>
-          <button class="btn primary" type="submit">Add login</button><p class="mf-err" hidden></p></form>`;
-    }
-    return `<div class="view-head"><h2 class="h">Account</h2></div><section class="block acct-box">${body}</section>`;
+    const who = A.name ? `Logged in as <b>${esc(A.name)}</b>.` : 'You’re logged in on this device.';
+    return `<div class="view-head"><h2 class="h">Account</h2></div><section class="block acct-box">
+      <p>${who} Log in with your name and password on any phone, tablet or computer to see the same tracker.</p>
+      <div class="btn-row"><button class="btn" data-act="acct-pw" aria-expanded="${A.pwOpen}">Change password</button><button class="btn" data-act="acct-logout">Log out of this device</button></div>
+      ${A.pwOpen ? `<form class="acct-form acct-inline" data-form="acct-pw" novalidate>
+        <label class="fld grow"><span>New password <small class="opt">at least 6 characters</small></span><input name="password" type="password" autocomplete="new-password" maxlength="72" required></label>
+        <button class="btn primary" type="submit">Save</button><p class="mf-err" hidden></p></form>` : ''}
+    </section>`;
   }
   const baseRenderData = window.renderData;
   window.renderData = function renderDataWithAccount() {
     baseRenderData();
     if (!Sync.key) return;
     const el = document.getElementById('v-data');
-    if (el) el.insertAdjacentHTML('afterbegin', accountHTML());
+    if (!el) return;
+    const card = el.querySelector('.sync-card');
+    if (card) {
+      const status = card.querySelector('.sync-status');
+      card.innerHTML = '';
+      if (status) card.appendChild(status);
+      card.insertAdjacentHTML('beforeend', '<p>Everything you do is saved to your account, so it’s the same on every device you log in on.</p><div class="btn-row"><button class="btn" data-act="sync-now">Sync now</button></div>');
+    }
+    const disc = el.querySelector('[data-act="disconnect"]');
+    if (disc && disc.closest('li')) disc.closest('li').remove();
+    el.insertAdjacentHTML('afterbegin', accountHTML());
   };
 
   /* ── events ── */
@@ -148,7 +150,7 @@
         Sync.disconnect();
         Store.wipe();
         setName(null);
-        history.replaceState(null, '', location.pathname);
+        cleanHash();
         rebuild();
         render();
         A.mode = 'login';
@@ -162,41 +164,13 @@
     const kind = f.dataset && f.dataset.form;
     if (!kind || !kind.startsWith('acct-')) return;
     ev.preventDefault();
-    const val = (n) => { const i = f.elements.namedItem(n); return i ? i.value.trim() : ''; };
-    if (kind === 'acct-link') {
-      const key = parseKeyFromLink(val('link'));
-      if (!key) { formError(f, 'Paste the whole private link. It ends with #k= followed by a long code.'); return; }
-      busy(f, true);
-      const ok = await connectWith(key, { quiet: true });
-      busy(f, false);
-      if (!ok && !Sync.key) return;
-      const who = await call('cd_whoami', { p_secret: key });
-      setName(who.name || null);
-      hideGate();
-      render();
-      toast('Your tracker is open.');
-      return;
-    }
     if (kind === 'acct-login' || kind === 'acct-signup') {
-      const name = val('name'), password = f.elements.namedItem('password').value;
+      const name = f.elements.namedItem('name').value.trim(), password = f.elements.namedItem('password').value;
       if (!name || !password) { formError(f, 'Fill in your name and password.'); return; }
       busy(f, true);
-      const r = kind === 'acct-login'
-        ? await call('cd_login', { p_name: name, p_password: password })
-        : await call('cd_signup', { p_invite: val('invite'), p_name: name, p_password: password });
+      const r = await call(kind === 'acct-login' ? 'cd_login' : 'cd_signup', kind === 'acct-login' ? { p_name: name, p_password: password } : { p_invite: INVITE, p_name: name, p_password: password });
       if (r.error || !r.secret) { busy(f, false); formError(f, failText(r)); return; }
       await openTracker(r.secret, r.name || name);
-      return;
-    }
-    if (kind === 'acct-attach') {
-      const name = val('name'), password = f.elements.namedItem('password').value;
-      busy(f, true);
-      const r = await call('cd_attach', { p_secret: Sync.key, p_name: name, p_password: password });
-      busy(f, false);
-      if (r.error) { formError(f, failText(r)); return; }
-      setName(r.name || name);
-      renderData();
-      toast(`Login added. Log in as ${A.name} on your other devices.`);
       return;
     }
     if (kind === 'acct-pw') {
@@ -210,18 +184,31 @@
     }
   });
 
-  /* Show the log-in screen whenever no tracker is open (first visit, after logging out or disconnecting). */
+  /* Show the log-in screen whenever this device isn't logged in (first visit, after logging out). */
   let gateTimer = null;
   Sync.onChange(() => {
     clearTimeout(gateTimer);
+    if (Sync.key && Sync.status === 'error' && /not recognised/.test(Sync.message)) {
+      // the account behind this device was removed: log out and start again
+      Sync.disconnect();
+      Store.wipe();
+      setName(null);
+      rebuild();
+      render();
+      A.mode = 'login';
+      showGate();
+      toast('That account no longer exists. Log in or create a new one.');
+      return;
+    }
     if (Sync.key) { hideGate(); return; }
     gateTimer = setTimeout(() => { if (!Sync.key) { setName(null); showGate(); } }, 400);
   });
 
-  if (!Sync.key && !parseKeyFromLink(location.hash)) showGate();
+  cleanHash();
+  if (!Sync.key) showGate();
   else {
     if (ui.tab === 'data') renderData();
-    if (Sync.key && !A.name) {
+    if (!A.name) {
       call('cd_whoami', { p_secret: Sync.key }).then((r) => { if (r && r.name) { setName(r.name); if (ui.tab === 'data') renderData(); } });
     }
   }

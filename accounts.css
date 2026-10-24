@@ -11,10 +11,7 @@ body.acct-locked { overflow: hidden; }
 .acct-form { display: grid; gap: 12px; }
 .acct-form .btn.primary { width: 100%; min-height: 46px; }
 .acct-form .mf-err { margin: 0; }
-.acct-link { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line-soft); font-size: 13.5px; }
-.acct-link summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
-.acct-link .acct-form { margin-top: 12px; }
-.acct-link .btn { width: 100%; }
+.acct-card > .acct-foot { margin: 14px 0 0; text-align: center; }
 .acct-box p { margin: 0 0 12px; }
 .acct-inline { margin-top: 12px; }
 .acct-inline .btn.primary { width: auto; min-height: 40px; justify-self: start; }
