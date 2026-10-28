@@ -18,3 +18,7 @@
   const all = own.concat(shared).sort((a, b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at));
   SCHOOL_EXAMS.splice(0, SCHOOL_EXAMS.length, ...all);
 })();
+
+/* Tamil Paper 1 is split into its seven questions on the main copy; here the subject also covers
+   French and Hindi, whose papers are laid out differently, so it stays one paper. */
+delete PAPER_PARTS.tamil_p1;
