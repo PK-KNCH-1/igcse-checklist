@@ -1,12 +1,12 @@
 /* Countdown service worker: keeps the app usable offline.
    App files: network first, falling back to the saved copy.
    Fonts: saved copy first. Sync calls are never cached. */
-const VERSION = 'countdown-v14f';
+const VERSION = 'countdown-v15f';
 // Caches are shared by everything on the same website, so name them after this copy's folder
 // and only ever clear this copy's old ones (and the unscoped names used before v8).
 const SCOPE = new URL(self.registration.scope).pathname;
 const CACHE = `${SCOPE}|${VERSION}`;
-const SHELL = ['./', 'index.html', 'style.css?v=14f', 'katex/katex.min.css?v=14f', 'data.js?v=14f', 'friend-data.js?v=14f', 'sync.js?v=14f', 'quiz.js?v=14f', 'qn-phys.js?v=14f', 'qn-chem.js?v=14f', 'qn-bio.js?v=14f', 'qn-maths.js?v=14f', 'qz-econ.js?v=14f', 'app.js?v=14f', 'accounts.js?v=14f', 'accounts.css?v=14f', 'config.js?v=14f', 'manifest.webmanifest', 'icons/icon-192.png', 'katex/fonts/KaTeX_Main-Regular.woff2', 'katex/fonts/KaTeX_Math-Italic.woff2', 'katex/fonts/KaTeX_Main-Bold.woff2', 'katex/fonts/KaTeX_Size1-Regular.woff2', 'katex/fonts/KaTeX_Size2-Regular.woff2', 'katex/fonts/KaTeX_AMS-Regular.woff2'];
+const SHELL = ['./', 'index.html', 'style.css?v=15f', 'katex/katex.min.css?v=15f', 'data.js?v=15f', 'friend-data.js?v=15f', 'sync.js?v=15f', 'quiz.js?v=15f', 'qn-phys.js?v=15f', 'qn-chem.js?v=15f', 'qn-bio.js?v=15f', 'qn-maths.js?v=15f', 'qz-econ.js?v=15f', 'app.js?v=15f', 'accounts.js?v=15f', 'accounts.css?v=15f', 'config.js?v=15f', 'manifest.webmanifest', 'icons/icon-192.png', 'katex/fonts/KaTeX_Main-Regular.woff2', 'katex/fonts/KaTeX_Math-Italic.woff2', 'katex/fonts/KaTeX_Main-Bold.woff2', 'katex/fonts/KaTeX_Size1-Regular.woff2', 'katex/fonts/KaTeX_Size2-Regular.woff2', 'katex/fonts/KaTeX_AMS-Regular.woff2'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

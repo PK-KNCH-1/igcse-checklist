@@ -22,3 +22,17 @@
 /* Tamil Paper 1 is split into its seven questions on the main copy; here the subject also covers
    French and Hindi, whose papers are laid out differently, so it stays one paper. */
 delete PAPER_PARTS.tamil_p1;
+
+/* Revision units: English lists both FLE and ESL (each friend hides the one they don't take), and the
+   second language gets skills shared by Tamil, French and Hindi; anything else can be added in the app. */
+UNITS.eng[0].g = 'FLE Paper 1 Reading';
+UNITS.eng[1].g = 'FLE Paper 2 Directed writing and composition';
+UNITS.eng.push({ g: 'ESL (English as a Second Language)', u: [
+  ['esl-read', 'Reading', ''], ['esl-notes', 'Note-making and summary', ''], ['esl-email', 'Informal writing (email)', ''],
+  ['esl-formal', 'Formal writing (article, report, review or essay)', ''], ['esl-listen', 'Listening', ''],
+] });
+UNITS.tamil = [{ g: '', u: [
+  ['sl-read', 'Reading comprehension', ''], ['sl-letter', 'Writing: letter, report, speech or dialogue', ''],
+  ['sl-essay', 'Writing: essay', ''], ['sl-trans', 'Translation', ''], ['sl-listen', 'Listening', ''],
+  ['sl-speak', 'Speaking', ''], ['sl-gram', 'Grammar and vocabulary', ''],
+] }];
